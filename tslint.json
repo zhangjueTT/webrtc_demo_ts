@@ -1,5 +1,24 @@
 {
   "extends": ["tslint:recommended", "tslint-react", "tslint-config-prettier"],
+  "rules": {
+    "no-console": false,
+    "ordered-imports": false,
+    "variable-name": [
+      true,
+      "ban-keywords",
+      "check-format",
+      "allow-leading-underscore",
+      "allow-pascal-case"
+    ],
+    "no-shadowed-variable": false,
+    "member-ordering": [
+      true,
+      {
+        "alphabetize": false,
+        "order": ["private-static-field", "public-instance-method"]
+      }
+    ]
+  },
   "linterOptions": {
     "exclude": [
       "config/**/*.js",
