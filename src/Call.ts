@@ -44,28 +44,28 @@ export class Call {
     });
   }
 
-  private _initPC(pc: any, isRemote: boolean = false) {
-    pc = new RTCPeerConnection(pcConfig);
+  private _initPC() {
+    const pc = new RTCPeerConnection(pcConfig) as any;
     pc.onicecandidate = (event: any) => {
       console.log("icecandidate event: ", event.candidate);
       this._handleConnection(event);
     };
-    pc.iceconnectionstatechange = (event: any) => {
+    pc.oniceconnectionstatechange = (event: any) => {
       const peerConnection = event.target;
       console.log(
         "iceconnectionstatechange: ",
         peerConnection.iceConnectionState,
       );
     };
-    if (isRemote) {
-      pc.onaddstream = (event: any) => {
-        console.log("remote addtrack");
-        this._remoteMediaStream.srcObject = event.stream;
-      };
-    } else {
-      console.log("local pc add stream");
-      pc.addStream(this._localStream);
-    }
+    pc.onaddstream = (event: any) => {
+      console.log("remote addtrack");
+      this._remoteMediaStream.srcObject = event.stream;
+    };
+
+    console.log("local pc add stream");
+    pc.addStream(this._localStream);
+
+    return pc;
   }
 
   public start() {
@@ -84,7 +84,7 @@ export class Call {
   public makeCall() {
     console.log("start make call");
     // this._isCaller = true;
-    this._initPC(this._pc);
+    this._pc = this._initPC();
     this._pc
       .createOffer(null)
       .then((description: any) => {
@@ -101,11 +101,13 @@ export class Call {
   }
 
   private _onAnswerSdp(description: any) {
+    console.log("set caller remote answer");
     this._pc.setRemoteDescription(description);
+    // this._getRemoteMediaStream();
   }
 
   private _onOfferSdp(description: any) {
-    this._initPC(this._pc, true);
+    this._pc = this._initPC();
     this._pc.setRemoteDescription(description);
     this._pc
       .createAnswer(null)
@@ -125,9 +127,9 @@ export class Call {
   private _handleConnection(event: any) {
     if (event.candidate) {
       this._sendIceCandidate({
-        label: event.candidate.sdpMLineIndex,
         id: event.candidate.sdpMid,
         candidate: event.candidate.candidate,
+        label: event.candidate.sdpMLineIndex,
       });
     } else {
       console.log("End of candidates.");
@@ -155,7 +157,7 @@ export class Call {
   }
 
   private _sendIceCandidate(info: any) {
-    console.log("send remote sdp");
+    console.log("send IceCandidate");
     socket.emit("candidate", info);
   }
 
@@ -167,4 +169,11 @@ export class Call {
     });
     this._pc.addIceCandidate(candidate);
   }
+
+  // private _getRemoteMediaStream() {
+  //   console.log("get RemoteMediaStream", this._pc);
+  //   const remoteStream = this._pc.getRemoteStreams();
+  //   console.log("RemoteMediaStream", remoteStream);
+  //   this._remoteMediaStream.srcObject = remoteStream[0];
+  // }
 }
